@@ -1,0 +1,384 @@
+{
+  "name": "Enterprise Expense Extraction System",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "binaryPropertyName": "data",
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "text/plain",
+              "slidesToFormat": "application/pdf",
+              "sheetsToFormat": "application/pdf"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1088,
+        128
+      ],
+      "id": "afa5f422-ae8c-468d-8c9e-497b589b0243",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "znaeUjaH1mCpquFb",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Extract the data from the provided receipt image and format it into a strict JSON object.\nDo not include Markdown formatting or conversational text. Use the following schema and rules:\nVendor:(string) The name of the store or merchant.\nDate:(string) The date of the transaction converted to DD/MM/YYYY format.\nItems:(string) Each item must be a single row formatted exactly as: name:<item name> -Qty:<quantity> -Total:<total price>,between the items have a newline\ntotal:(Float) The grand total amount paid.",
+        "hasOutputParser": true,
+        "options": {
+          "passthroughBinaryImages": true,
+          "passthroughBinaryPdfs": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -816,
+        128
+      ],
+      "id": "11aacdd7-5d82-4806-8553-81edc765ce30",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -976,
+        352
+      ],
+      "id": "bee9e6ed-35f2-43b8-9943-d5f270b76bb7",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "mFuTIDlkF7EIXtkb",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\"vendor\": \"TESCO metro\", \"date\": \"23/04/2012\", \"items\": \"Name: FRESH MILK - Qty: 1 - Total: 0.89\\nName: MUESLI - Qty: 1 - Total: 2.29\\nName: DARK CHOCOLATE - Qty: 2 - Total: 1.90\", \"total\": 5.08}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -624,
+        384
+      ],
+      "id": "eac5ff43-7cfb-4fd5-8063-ed460350ac42",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1rMVvboj-ilEfJI3fdhq_T5jeWthPyQwV",
+          "mode": "list",
+          "cachedResultName": "Receipt Tracker ",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1rMVvboj-ilEfJI3fdhq_T5jeWthPyQwV"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1280,
+        128
+      ],
+      "id": "1331b7a3-5836-4a6d-923c-6f8d8e055cac",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "znaeUjaH1mCpquFb",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1u6cgQYRwf6q3r3zOf22iHXlB1iU-b0ZRHH1JJlBr3L8",
+          "mode": "list",
+          "cachedResultName": "Receipt Tracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1u6cgQYRwf6q3r3zOf22iHXlB1iU-b0ZRHH1JJlBr3L8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1u6cgQYRwf6q3r3zOf22iHXlB1iU-b0ZRHH1JJlBr3L8/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "vendor": "={{ $json.output.vendor }}",
+            "date": "={{ $json.output.date }}",
+            "items": "={{ $json.output.items }}",
+            "total": "={{ $json.output.total }}"
+          },
+          "matchingColumns": [
+            "vendor"
+          ],
+          "schema": [
+            {
+              "id": "vendor",
+              "displayName": "vendor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "items",
+              "displayName": "items",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "total",
+              "displayName": "total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -464,
+        128
+      ],
+      "id": "382b162a-2a1b-4506-9f80-6ecaec9f1004",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "dQgrgEbNe4ToISs1",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "convertToHtmlTable",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -240,
+        128
+      ],
+      "id": "d3890e7d-b10d-4e50-a5eb-ac4e4729318b",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "sendTo": "stephennyarangi03@gmail.com",
+        "subject": "=New receipt Processed from",
+        "message": "={{ $json.table }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -32,
+        128
+      ],
+      "id": "59ce80bb-568c-45ce-8609-30477dde7bb7",
+      "name": "Send a message1",
+      "webhookId": "17fd403e-9adf-44b2-a31c-ff5e25678218",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MBUxyORTiMd6yjm1",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "new-channel",
+          "mode": "name"
+        },
+        "text": "=📄 *New Document Processed!*\n• *Vendor:* {{ $('AI Agent1').item.json.output.vendor }}\n• *Date:* {{ $('AI Agent1').item.json.output.date }}\n• *Total:* {{ $('AI Agent1').item.json.output.total }}\n• *View Original Image:* <{{ $('Google Drive Trigger').item.json.webViewLink }}|Click Here to View Image>",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        160,
+        128
+      ],
+      "id": "e4985974-f89c-43d5-bf03-7cb42731805f",
+      "name": "Send a message",
+      "webhookId": "a04e49d6-fc0a-407e-8f0f-79db0fe60d0d",
+      "credentials": {
+        "slackApi": {
+          "id": "6xi4QsPsnfNUj31c",
+          "name": "Slack account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "0db67ac3-02aa-492d-98d2-9cb0986229c2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ab173268efb8fe63d8276a805d8b6ca4c871b475a426103096066663b4ac8cbf"
+  },
+  "nodeGroups": [],
+  "id": "Y40gtMvFHPWTLZle",
+  "tags": []
+}
